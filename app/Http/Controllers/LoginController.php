@@ -2,25 +2,72 @@
 
 namespace App\Http\Controllers;
 
+use App\User;
+use Exception;
+use Firebase\JWT\Key;
+use Firebase\JWT\JWT;
 use Illuminate\Http\Request;
-
-use App\Http\Requests;
-use Validator;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Request as FacadesRequest;
 
 class LoginController extends Controller
 {
-    public function logIn($request)
+    protected $secretKey = 'MO3BFRivss}<$!y';
+    protected $algorit = 'HS256';
+
+
+    public function logIn(Request $request)
     {
-        $isValid = Validator::make($request, [
+        $this->validate($request, [
             'name' => 'required|max:255',
-            'password' => 'required|min:6',
+            'password' => 'required|min:4',
         ]);
+        
+        $request = $request->all();
 
-        if(!$isValid)
+        try {
+            if (Auth::attempt([
+            'name' => $request['name'],
+            'password' => $request['password']
+        ])) {
+                $token = JWT::encode([
+                'iat' => time(),
+                'exp' => time() + (60 * 60),
+                'aud' => sha1($_SERVER['REMOTE_ADDR']),
+                'user' => Auth::user()
+            ], $this->secretKey, $this->algorit);
+                return response()->json([
+                'accessToken' => $token
+            ]);
+            } else {
+                
+                return "no";
+            }
+        } catch(Exception $e)
         {
-            return ['mensaje' => "Es invalido"];
+            echo 'Error: ' + $e->getMessage();
         }
-        return ['token' => "Este es su puto token"];
-
     }
+
+    public function getUser(Request $request)
+    {
+        $header = $request->header('Authorization');
+        if($header == null || $header == "")
+        {
+            return "No valido";
+        }
+
+        $token = explode("Bearer ", $header)[1];
+        $tokenDecoded = JWT::decode($token, new Key('MO3BFRivss}<$!y', 'HS256'));
+        $userId = $tokenDecoded->user->id;
+        $user = User::findOrFail($userId);
+        if($user == null){
+            return "Usuario no encontrado";
+        }
+        return $user;
+    }
+
+    
+
+    
 }

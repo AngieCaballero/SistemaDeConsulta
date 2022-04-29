@@ -11,8 +11,29 @@
 |
 */
 
-Route::get('/', 'Controller@holiis');
+//Route::get('/', 'Controller@holiis');
 Route::post('/login', 'LoginController@logIn');
+
+Route::group(['middleware' => ['login']], function() {
+
+    Route::get('/getUser', 'LoginController@getUser');
+    Route::get('/getEstudiantes', 'DatosController@getEstudiantes');
+    Route::get('/getPostgrados', 'DatosController@getPostgrados');
+    Route::get('/getTrabajadores', 'DatosController@getTrabajadores');
+
+});
+
+Route::group(['middleware' => ['admin']], function() {
+
+    Route::post('/createUser', 'UsersController@createUser');
+    Route::get('/getUsers', 'UsersController@getUsers');
+    Route::post('/editUser', 'UsersController@editUser');
+    Route::get('/deletetUser/{id}', 'UsersController@deleteUser');
+    Route::get('/changeAdmin/{id}', 'UsersController@changeAdmin');
+
+});
+
+
 
 /*
 |--------------------------------------------------------------------------
